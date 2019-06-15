@@ -47,6 +47,8 @@ public class Main {
             String message = event.getMessageContent();
             if (message.length() >= 5 && message.substring(0,5).equalsIgnoreCase("!give")){
                 for(User user: event.getMessage().getMentionedUsers()){
+                    if(user.equals(event.getMessageAuthor().asUser().get()))
+                        continue;
                     if(pointTotals.get(user) != null)
                         pointTotals.put(user,pointTotals.get(user)+1);
                     else
@@ -57,6 +59,8 @@ public class Main {
             }
             else if (message.length() >= 5 && message.substring(0,5).equalsIgnoreCase("!take")){
                 for(User user: event.getMessage().getMentionedUsers()){
+                    if(user.equals(event.getMessageAuthor().asUser().get()))
+                        continue;
                     if(pointTotals.get(user) != null)
                         pointTotals.put(user,pointTotals.get(user)-1);
                     else
