@@ -6,9 +6,7 @@ import org.javacord.api.entity.user.User;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
 
 public class Main {
 
@@ -27,7 +25,6 @@ public class Main {
 
         DiscordApi api = new DiscordApiBuilder().setToken(token).login().join();
 
-        // Add a listener which answers with "Pong!" if someone writes "!ping"
         api.addMessageCreateListener(event -> {
             String message = event.getMessageContent();
             if (message.length() >= 5 && message.substring(0,5).equalsIgnoreCase("!give")){
@@ -36,31 +33,53 @@ public class Main {
                         pointTotals.put(user,pointTotals.get(user)+1);
                     else
                         pointTotals.put(user,1);
+                    event.getChannel().sendMessage("Gave 1 point to " + user.getNicknameMentionTag());
+
                 }
             }
             else if (message.length() >= 5 && message.substring(0,5).equalsIgnoreCase("!take")){
                 for(User user: event.getMessage().getMentionedUsers()){
-                    pointTotals.put(user,pointTotals.get(user)+1);
+                    if(pointTotals.get(user) != null)
+                        pointTotals.put(user,pointTotals.get(user)-1);
+                    else
+                        pointTotals.put(user,-1);
+                    event.getChannel().sendMessage("Took 1 point from " + user.getNicknameMentionTag());
                 }
             }
             else if (message.length() >= 7 && message.substring(0,7).equalsIgnoreCase("!points")){
                 String ret = "";
-                if (event.getMessage().getMentionedUsers() == null){
-                    ret += event.getMessageAuthor().getDiscriminatedName();
-                    if(pointTotals.get(event.getMessageAuthor().asUser()) == null){
-                        ret += ": 0";
-                    }
-                    else
-                        ret += ": " + pointTotals.get(event.getMessageAuthor().asUser());
+                if (event.getMessage().getMentionedUsers().size() == 0){
+                    System.out.println("Test");
+                    ret += event.getMessageAuthor().asUser().get().getNicknameMentionTag();
+                    if(pointTotals.get(event.getMessageAuthor().asUser().get()) == null)
+                        pointTotals.put(event.getMessageAuthor().asUser().get(),0);
+                    ret += ": " + pointTotals.get(event.getMessageAuthor().asUser().get());
                     event.getChannel().sendMessage(ret);
                 }
                 else {
                     for (User user : event.getMessage().getMentionedUsers()) {
+                        if(pointTotals.get(user) == null)
+                            pointTotals.put(user,0);
                         event.getChannel().sendMessage(user.getNicknameMentionTag() + ": " + pointTotals.get(user));
                     }
                 }
 
             }
+            else if(message.equalsIgnoreCase("!leaderboard")){
+                List<Map.Entry<User,Integer>> map = new LinkedList<>(pointTotals.entrySet());
+                Collections.sort(map, new Comparator<Map.Entry<User, Integer>>() {
+                    @Override
+                    public int compare(Map.Entry<User, Integer> o1, Map.Entry<User, Integer> o2) {
+                        return o2.getValue().compareTo(o1.getValue());
+                    }
+                });
+                for (int i = 0; i < 5 && i < map.size() ; i++) {
+                    String board = "**" + (i+1) + ".** " + map.get(i).getKey().getNicknameMentionTag() + ": " + map.get(i).getValue();
+                    event.getChannel().sendMessage(board);
+                }
+
+            }
+
         });
 
         // Print the invite url of your bot
