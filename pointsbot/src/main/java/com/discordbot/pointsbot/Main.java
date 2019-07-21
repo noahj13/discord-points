@@ -3,18 +3,22 @@ package com.discordbot.pointsbot;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.DiscordApiBuilder;
 import org.javacord.api.entity.user.User;
+import org.javacord.api.listener.message.reaction.ReactionAddListener;
+import org.javacord.api.util.event.ListenerManager;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class Main {
 
     public static void main(String[] args) {
 
-        //Map<User,Integer> pointTotals = new HashMap<>();
         Map<Long,Map<User,Integer>> servers = new HashMap<>();
         // Insert your bot's token here
         Scanner file = new Scanner(System.in);
@@ -50,87 +54,92 @@ public class Main {
         }
 
         api.addMessageCreateListener(event -> {
-            String message = event.getMessageContent();
-            if (message.length() >= 5 && message.substring(0,5).equalsIgnoreCase("!give")){
+            if(!event.getMessageAuthor().asUser().get().isYourself()) {
+                String message = event.getMessageContent();
                 long server = event.getServer().get().getId();
-                servers.putIfAbsent(server,new HashMap<>());
-                for(User user: event.getMessage().getMentionedUsers()){
-                    if(user.equals(event.getMessageAuthor().asUser().get()))
-                        continue;
-                    if(servers.get(server).get(user) != null)
-                        servers.get(server).put(user,servers.get(server).get(user)+1);
-                    else
-                        servers.get(server).put(user,1);
-                    event.getChannel().sendMessage("Gave 1 point to " + user.getNicknameMentionTag());
-                    System.out.println(event.getServer().get().getId());
-                }
-            }
-            else if (message.length() >= 5 && message.substring(0,5).equalsIgnoreCase("!take")){
-                long server = event.getServer().get().getId();
-                servers.putIfAbsent(server,new HashMap<>());
-                for(User user: event.getMessage().getMentionedUsers()){
-                    if(user.equals(event.getMessageAuthor().asUser().get()))
-                        continue;
-                    if(servers.get(server).get(user) != null)
-                        servers.get(server).put(user,servers.get(server).get(user)-1);
-                    else
-                        servers.get(server).put(user,-1);
-                    event.getChannel().sendMessage("Took 1 point from " + user.getNicknameMentionTag());
-                }
-            }
-            else if (message.length() >= 7 && message.substring(0,7).equalsIgnoreCase("!points")){
-                long server = event.getServer().get().getId();
-                servers.putIfAbsent(server,new HashMap<>());
-                String ret = "";
-                if (event.getMessage().getMentionedUsers().size() == 0){
-                    ret += event.getMessageAuthor().asUser().get().getNicknameMentionTag();
-                    servers.get(server).putIfAbsent(event.getMessageAuthor().asUser().get(),0);
-                    ret += ": " + servers.get(server).get(event.getMessageAuthor().asUser().get());
-                    event.getChannel().sendMessage(ret);
-                }
-                else {
-                    for (User user : event.getMessage().getMentionedUsers()) {
-                        if(user.getName().equalsIgnoreCase("everyone") || user.getName().equalsIgnoreCase("here"))
-                            continue;
-                        servers.get(server).putIfAbsent(user,0);
-                        event.getChannel().sendMessage(user.getNicknameMentionTag() + ": " + servers.get(server).get(user));
+                if (message.length() >= 7 && message.substring(0, 7).equalsIgnoreCase("!points")) {
+                    servers.putIfAbsent(server, new HashMap<>());
+                    String ret = "";
+                    if (event.getMessage().getMentionedUsers().size() == 0) {
+                        ret += event.getMessageAuthor().asUser().get().getNicknameMentionTag();
+                        servers.get(server).putIfAbsent(event.getMessageAuthor().asUser().get(), 0);
+                        ret += ": " + servers.get(server).get(event.getMessageAuthor().asUser().get());
+                        event.getChannel().sendMessage(ret);
+                    } else {
+                        for (User user : event.getMessage().getMentionedUsers()) {
+                            if (user.getName().equalsIgnoreCase("everyone") || user.getName().equalsIgnoreCase("here"))
+                                continue;
+                            servers.get(server).putIfAbsent(user, 0);
+                            event.getChannel().sendMessage(user.getNicknameMentionTag() + ": " + servers.get(server).get(user));
+                        }
                     }
-                }
 
-            }
-            else if(message.equalsIgnoreCase("!leaderboard")){
-                long server = event.getServer().get().getId();
-                servers.putIfAbsent(server,new HashMap<>());
-                List<Map.Entry<User,Integer>> map = new LinkedList<>(servers.get(server).entrySet());
-                Collections.sort(map, new Comparator<Map.Entry<User, Integer>>() {
-                    @Override
-                    public int compare(Map.Entry<User, Integer> o1, Map.Entry<User, Integer> o2) {
-                        return o2.getValue().compareTo(o1.getValue());
+                } else if (message.equalsIgnoreCase("!leaderboard")) {
+                    servers.putIfAbsent(server, new HashMap<>());
+                    List<Map.Entry<User, Integer>> map = new LinkedList<>(servers.get(server).entrySet());
+                    Collections.sort(map, new Comparator<Map.Entry<User, Integer>>() {
+                        @Override
+                        public int compare(Map.Entry<User, Integer> o1, Map.Entry<User, Integer> o2) {
+                            return o2.getValue().compareTo(o1.getValue());
+                        }
+                    });
+                    for (int i = 0; i < 5 && i < map.size(); i++) {
+                        String board = "**" + (i + 1) + ".** " + map.get(i).getKey().getNicknameMentionTag() + ": " + map.get(i).getValue();
+                        event.getChannel().sendMessage(board);
                     }
-                });
-                for (int i = 0; i < 5 && i < map.size() ; i++) {
-                    String board = "**" + (i+1) + ".** " + map.get(i).getKey().getNicknameMentionTag() + ": " + map.get(i).getValue();
-                    event.getChannel().sendMessage(board);
-                }
 
-            }
-            else if(message.equalsIgnoreCase("!shame")){
-                long server = event.getServer().get().getId();
-                servers.putIfAbsent(server,new HashMap<>());
-                List<Map.Entry<User,Integer>> map = new LinkedList<>(servers.get(server).entrySet());
-                Collections.sort(map, new Comparator<Map.Entry<User, Integer>>() {
-                    @Override
-                    public int compare(Map.Entry<User, Integer> o1, Map.Entry<User, Integer> o2) {
-                        return o1.getValue().compareTo(o2.getValue());
+                } else if (message.equalsIgnoreCase("!shame")) {
+                    servers.putIfAbsent(server, new HashMap<>());
+                    List<Map.Entry<User, Integer>> map = new LinkedList<>(servers.get(server).entrySet());
+                    Collections.sort(map, new Comparator<Map.Entry<User, Integer>>() {
+                        @Override
+                        public int compare(Map.Entry<User, Integer> o1, Map.Entry<User, Integer> o2) {
+                            return o1.getValue().compareTo(o2.getValue());
+                        }
+                    });
+                    for (int i = 0; i < 5 && i < map.size(); i++) {
+                        String board = "**" + (i + 1) + ".** " + map.get(i).getKey().getNicknameMentionTag() + ": " + map.get(i).getValue();
+                        event.getChannel().sendMessage(board);
                     }
-                });
-                for (int i = 0; i < 5 && i < map.size() ; i++) {
-                    String board = "**" + (i+1) + ".** " + map.get(i).getKey().getNicknameMentionTag() + ": " + map.get(i).getValue();
-                    event.getChannel().sendMessage(board);
+
                 }
-
+                else{
+                    event.getMessage().addReactionAddListener(m -> {
+                        if (event.getMessage().getReactions().stream().filter(i -> {
+                            try {
+                                return i.getUsers().get().stream().filter(User::isYourself).collect(Collectors.toList()).size() != 0;
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            } catch (ExecutionException e) {
+                                e.printStackTrace();
+                            }
+                            return false;
+                        }).collect(Collectors.toList()).size() == 0) {
+                            if (m.getEmoji().equalsEmoji("👍")) {
+                                User user = event.getMessageAuthor().asUser().get();
+                                if (!user.equals(event.getMessageAuthor().asUser().get())) {
+                                    if (servers.get(server).get(user) != null)
+                                        servers.get(server).put(user, servers.get(server).get(user) + 1);
+                                    else
+                                        servers.get(server).put(user, 1);
+                                    event.getChannel().sendMessage("Gave 1 point to " + user.getNicknameMentionTag());
+                                    event.getMessage().addReaction("✅");
+                                }
+                            } else if (m.getEmoji().equalsEmoji("👎")) {
+                                User user = event.getMessageAuthor().asUser().get();
+                                if (!user.equals(event.getMessageAuthor().asUser().get())) {
+                                    if (servers.get(server).get(user) != null)
+                                        servers.get(server).put(user, servers.get(server).get(user) - 1);
+                                    else
+                                        servers.get(server).put(user, -1);
+                                    event.getMessage().addReaction("✅");
+                                    event.getChannel().sendMessage("Took 1 point from " + user.getNicknameMentionTag());
+                                }
+                            }
+                        }
+                    }).removeAfter(5, TimeUnit.MINUTES);
+                }
             }
-
         });
 
         // Print the invite url of your bot
