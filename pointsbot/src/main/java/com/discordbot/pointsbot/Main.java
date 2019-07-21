@@ -5,6 +5,10 @@ import org.javacord.api.DiscordApiBuilder;
 import org.javacord.api.entity.user.User;
 import org.javacord.api.listener.message.reaction.ReactionAddListener;
 import org.javacord.api.util.event.ListenerManager;
+import weka.classifiers.Classifier;
+import weka.core.Attribute;
+import weka.core.DenseInstance;
+import weka.core.Instances;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -17,6 +21,32 @@ import java.util.stream.Collectors;
 
 public class Main {
 
+    private static Classifier classifier = null;
+
+    private static synchronized String classifyMessage(String message){
+        ArrayList<Attribute> atts = new ArrayList<Attribute>(2);
+        ArrayList<String> classVal = new ArrayList<String>();
+        classVal.add("good");
+        classVal.add("bad");
+        classVal.add("neutral");
+        atts.add(new Attribute("message",(ArrayList<String>)null));
+        atts.add(new Attribute("class",classVal));
+
+        Instances messages = new Instances("messages",atts,1);
+        messages.setClassIndex(1);
+        double[] instanceValue = new double[messages.numAttributes()];
+
+        instanceValue[0] = messages.attribute(0).addStringValue(message);
+        messages.add(new DenseInstance(1.0, instanceValue));
+        try {
+            messages.firstInstance().setClassValue(classifier.classifyInstance(messages.firstInstance()));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return messages.firstInstance().stringValue(1);
+
+
+    }
     public static void main(String[] args) {
 
         Map<Long,Map<User,Integer>> servers = new HashMap<>();
@@ -51,6 +81,11 @@ public class Main {
             }
         }catch (IOException e){
 
+        }
+        try {
+            classifier = (Classifier)weka.core.SerializationHelper.read("pointsbot/Resources/messagesClassifier.weka");
+        }catch (Exception e){
+            e.printStackTrace();
         }
 
         api.addMessageCreateListener(event -> {
@@ -139,6 +174,7 @@ public class Main {
                         }
                     }).removeAfter(5, TimeUnit.MINUTES);
                 }
+                System.out.println(classifyMessage(message.toLowerCase()));
             }
         });
 
@@ -163,5 +199,6 @@ public class Main {
             }
         }
     }
+
 
 }
