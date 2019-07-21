@@ -1,16 +1,11 @@
 # discord-points
 A bot to keep track of points for people in a discord server
 <br>  
-!give @User  
-   gives a point to user  
-!give @User, @User2, ...  
-    gives a point to user and user2 for as many users as mentioned  
+react to a message with :thumbsup: to add points to that user
 <br>  
-!take @User  
-  takes a point from user  
-!take @User, @User2, ...  
-  takes a point from user, user2, ...  
-   <br>  
+react to a message with :thumbsdown: to add points to that user
+<br>  
+any reaction by the bot will lock that message from being checked for further reactions
 !points  
     prints out how many points you have  
 !points @User  
