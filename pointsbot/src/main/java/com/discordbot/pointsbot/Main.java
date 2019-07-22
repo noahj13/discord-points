@@ -2,9 +2,8 @@ package com.discordbot.pointsbot;
 
 import org.javacord.api.DiscordApi;
 import org.javacord.api.DiscordApiBuilder;
+import org.javacord.api.entity.message.Reaction;
 import org.javacord.api.entity.user.User;
-import org.javacord.api.listener.message.reaction.ReactionAddListener;
-import org.javacord.api.util.event.ListenerManager;
 import weka.classifiers.Classifier;
 import weka.core.Attribute;
 import weka.core.DenseInstance;
@@ -112,12 +111,7 @@ public class Main {
                 } else if (message.equalsIgnoreCase("!leaderboard")) {
                     servers.putIfAbsent(server, new HashMap<>());
                     List<Map.Entry<User, Integer>> map = new LinkedList<>(servers.get(server).entrySet());
-                    Collections.sort(map, new Comparator<Map.Entry<User, Integer>>() {
-                        @Override
-                        public int compare(Map.Entry<User, Integer> o1, Map.Entry<User, Integer> o2) {
-                            return o2.getValue().compareTo(o1.getValue());
-                        }
-                    });
+                    Collections.sort(map,(o1, o2)->o2.getValue().compareTo(o1.getValue()));
                     for (int i = 0; i < 5 && i < map.size(); i++) {
                         String board = "**" + (i + 1) + ".** " + map.get(i).getKey().getNicknameMentionTag() + ": " + map.get(i).getValue();
                         event.getChannel().sendMessage(board);
@@ -126,12 +120,7 @@ public class Main {
                 } else if (message.equalsIgnoreCase("!shame")) {
                     servers.putIfAbsent(server, new HashMap<>());
                     List<Map.Entry<User, Integer>> map = new LinkedList<>(servers.get(server).entrySet());
-                    Collections.sort(map, new Comparator<Map.Entry<User, Integer>>() {
-                        @Override
-                        public int compare(Map.Entry<User, Integer> o1, Map.Entry<User, Integer> o2) {
-                            return o1.getValue().compareTo(o2.getValue());
-                        }
-                    });
+                    Collections.sort(map,Comparator.comparing(Map.Entry::getValue));
                     for (int i = 0; i < 5 && i < map.size(); i++) {
                         String board = "**" + (i + 1) + ".** " + map.get(i).getKey().getNicknameMentionTag() + ": " + map.get(i).getValue();
                         event.getChannel().sendMessage(board);
@@ -152,29 +141,78 @@ public class Main {
                         }).collect(Collectors.toList()).size() == 0) {
                             if (m.getEmoji().equalsEmoji("👍")) {
                                 User user = event.getMessageAuthor().asUser().get();
-                                if (!user.equals(event.getMessageAuthor().asUser().get())) {
+                                if (true||!user.equals(event.getMessageAuthor().asUser().get())) {
                                     if (servers.get(server).get(user) != null)
                                         servers.get(server).put(user, servers.get(server).get(user) + 1);
                                     else
                                         servers.get(server).put(user, 1);
-                                    event.getChannel().sendMessage("Gave 1 point to " + user.getNicknameMentionTag());
+                                    event.getChannel().sendMessage("+1 " + user.getNicknameMentionTag() + ": \""+message+"\"");
                                     event.getMessage().addReaction("✅");
                                 }
                             } else if (m.getEmoji().equalsEmoji("👎")) {
                                 User user = event.getMessageAuthor().asUser().get();
-                                if (!user.equals(event.getMessageAuthor().asUser().get())) {
+                                if (true||!user.equals(event.getMessageAuthor().asUser().get())) {
                                     if (servers.get(server).get(user) != null)
                                         servers.get(server).put(user, servers.get(server).get(user) - 1);
                                     else
                                         servers.get(server).put(user, -1);
                                     event.getMessage().addReaction("✅");
-                                    event.getChannel().sendMessage("Took 1 point from " + user.getNicknameMentionTag());
+                                    event.getChannel().sendMessage("-1 " + user.getNicknameMentionTag() + ": \""+message+"\"");
                                 }
                             }
                         }
                     }).removeAfter(5, TimeUnit.MINUTES);
                 }
-                System.out.println(classifyMessage(message.toLowerCase()));
+                if(!message.startsWith("!")) {
+                    System.out.println(classifyMessage(message.toLowerCase()));
+                }
+            }
+            else{
+                event.getMessage().addReactionAddListener(m->{}).removeAfter(30,TimeUnit.SECONDS).addRemoveHandler(()->{
+                    int thumbsup = 0;
+                    int thumbsdown = 0;
+                    if(event.getMessage().getReactionByEmoji("👍").isPresent())
+                        thumbsup = event.getMessage().getReactionByEmoji("👍").get().getCount();
+                    if(event.getMessage().getReactionByEmoji("👎").isPresent())
+                        thumbsdown = event.getMessage().getReactionByEmoji("👎").get().getCount();
+                    String message = event.getMessageContent();
+                    String outMessage = message.substring(message.indexOf("\"")+1,message.length()-1);
+                    if(message.startsWith("-")) {
+                        try {
+                            BufferedWriter writer = new BufferedWriter(new FileWriter("pointsbot/Resources/messages.ARFF", true));
+                            if (thumbsup > thumbsdown) {
+                                writer.write("\""+outMessage+"\""+",bad");
+                                writer.newLine();
+                            }
+                            else if (thumbsup < thumbsdown) {
+                                writer.write("\""+outMessage+"\""+",neutral");
+                                writer.newLine();
+                            }
+                            writer.close();
+                        }
+                        catch (IOException ex) {
+                            ex.printStackTrace();
+                        }
+                    }
+                    else if(message.startsWith("+")) {
+                        try {
+                            BufferedWriter writer = new BufferedWriter(new FileWriter("pointsbot/Resources/messages.ARFF", true));
+                            if (thumbsup > thumbsdown) {
+                                writer.write("\""+outMessage+"\""+",good");
+                                writer.newLine();
+                            }
+                            else if (thumbsup < thumbsdown) {
+                                writer.write("\""+outMessage+"\""+",neutral");
+                                writer.newLine();
+                            }
+                            writer.close();
+                        }
+                        catch (IOException ex) {
+                            ex.printStackTrace();
+                        }
+                    }
+                    event.getMessage().addReaction("🚫");
+                });
             }
         });
 
