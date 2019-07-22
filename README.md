@@ -14,3 +14,6 @@ any reaction by the bot will lock that message from being checked for further re
        
 !leaderboard  
     prints out the top 5 users by number of points  
+    
+ !shame  
+    prints out bottom 5 users by number of points
