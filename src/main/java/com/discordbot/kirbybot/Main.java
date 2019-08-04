@@ -159,7 +159,7 @@ public class Main {
                 } else if (containsString(message, "dead")) {
                     mb.addAttachment(images.get("Pikadown.png"), "Pikadown.png").send(event.getChannel());
                 } else if (message.equalsIgnoreCase("no u")) {
-                    mb.addAttachment(images.get("Madkirb.gif"), "Madkirb.png").send(event.getChannel());
+                    mb.addAttachment(images.get("Madkirb.gif"), "Madkirb.gif").send(event.getChannel());
                 } else if (containsString(message, "bruh")) {
                     mb.addAttachment(images.get("Bruh.png"), "Bruh.png").send(event.getChannel());
                 } else if (containsString(message, "illegal")) {

@@ -2,10 +2,10 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/discord-points.iml" filepath="$PROJECT_DIR$/discord-points.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/pointsbot.iml" filepath="$PROJECT_DIR$/.idea/modules/pointsbot.iml" group="pointsbot" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/pointsbot/pointsbot_main.iml" filepath="$PROJECT_DIR$/.idea/modules/pointsbot/pointsbot_main.iml" group="pointsbot" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/pointsbot/pointsbot_test.iml" filepath="$PROJECT_DIR$/.idea/modules/pointsbot/pointsbot_test.iml" group="pointsbot" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Documents-kirby-bot.iml" filepath="$PROJECT_DIR$/.idea/modules/Documents-kirby-bot.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/kirby-bot.iml" filepath="$PROJECT_DIR$/.idea/modules/kirby-bot.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/kirby-bot_main.iml" filepath="$PROJECT_DIR$/.idea/modules/kirby-bot_main.iml" group="kirby-bot" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/kirby-bot_test.iml" filepath="$PROJECT_DIR$/.idea/modules/kirby-bot_test.iml" group="kirby-bot" />
     </modules>
   </component>
 </project>
