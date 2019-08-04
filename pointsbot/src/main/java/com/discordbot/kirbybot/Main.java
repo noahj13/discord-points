@@ -1,26 +1,30 @@
-package com.discordbot.pointsbot;
+package com.discordbot.kirbybot;
 
 import org.javacord.api.DiscordApi;
 import org.javacord.api.DiscordApiBuilder;
+import org.javacord.api.entity.message.MessageBuilder;
 import org.javacord.api.entity.user.User;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Main {
 
     public static void main(String[] args) {
 
-        //Map<User,Integer> pointTotals = new HashMap<>();
         Map<Long,Map<User,Integer>> servers = new HashMap<>();
+        Map<String,BufferedImage> images = new HashMap<>();
         // Insert your bot's token here
         Scanner file = new Scanner(System.in);
 
         try {
-            file = new Scanner(new File("pointsbot/Resources/token.cred"));
+            file = new Scanner(new File("../KirbyBotResources/token.cred"));
         }catch (IOException e){
             System.out.println("cannot find token");
             System.exit(1);
@@ -30,7 +34,7 @@ public class Main {
         DiscordApi api = new DiscordApiBuilder().setToken(token).login().join();
 
         try {
-            file = new Scanner(new File("pointsbot/Resources/points.txt"));
+            file = new Scanner(new File("../KirbyBotResources/points.txt"));
             while(file.hasNext()) {
                 try {
                     long server= file.nextLong();
@@ -46,9 +50,22 @@ public class Main {
                 }
             }
         }catch (IOException e){
-
+            e.printStackTrace();
         }
 
+        try{
+            File imgDir = new File("../KirbyBotResources/img");
+            Arrays.stream(imgDir.listFiles()).forEach(i -> {
+                try {
+                    images.put(i.getName(), ImageIO.read(i));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+        MessageBuilder mb = new MessageBuilder();
         api.addMessageCreateListener(event -> {
             String message = event.getMessageContent();
             if (message.length() >= 5 && message.substring(0,5).equalsIgnoreCase("!give")){
@@ -130,6 +147,37 @@ public class Main {
                 }
 
             }
+            try {
+                if (containsString(message, "oof")) {
+                    mb.addAttachment(images.get("Smackkirb.png"), "Smackkirb.png").send(event.getChannel());
+                } else if (containsString(message, "sip")) {
+                    mb.addAttachment(images.get("kirbsip.png"), "kirbsip.png").send(event.getChannel());
+                } else if (containsString(message, "ouch")) {
+                    mb.addAttachment(images.get("Sadkirb.png"), "Sadkirb.png").send(event.getChannel());
+                } else if (containsString(message, "bedtime")) {
+                    mb.addAttachment(images.get("Sleepkirb.png"), "Sleepkirb.png").send(event.getChannel());
+                } else if (containsString(message, "dead")) {
+                    mb.addAttachment(images.get("Pikadown.png"), "Pikadown.png").send(event.getChannel());
+                } else if (message.equalsIgnoreCase("no u")) {
+                    mb.addAttachment(images.get("Madkirb.gif"), "Madkirb.png").send(event.getChannel());
+                } else if (containsString(message, "bruh")) {
+                    mb.addAttachment(images.get("Bruh.png"), "Bruh.png").send(event.getChannel());
+                } else if (containsString(message, "illegal")) {
+                    mb.addAttachment(images.get("Policekirb.jpg"), "Policekirb.jpg").send(event.getChannel());
+                } else if (containsString(message, "why")) {
+                    mb.addAttachment(images.get("disturbedkirb.jpg"), "disturbedkirb.jpg").send(event.getChannel());
+                } else if (message.equalsIgnoreCase("oh okay")) {
+                    mb.addAttachment(images.get("Deflatedpika.png"), "Deflatedpika.png").send(event.getChannel());
+                } else if (!event.getMessageAuthor().isYourself() && containsString(message,"stfu")){
+                    List<User> users = event.getMessage().getMentionedUsers();
+                    mb.addAttachment(images.get("STFUkirb.png"),"STFUkirb.png").append(
+                            users.stream().map(User::getNicknameMentionTag).collect(Collectors.joining(" ","STFU ",""))
+                    ).send(event.getChannel());
+                }
+
+            }catch (IllegalArgumentException e){
+                System.out.println("cannot find image for " + message);
+            }
 
         });
 
@@ -138,7 +186,7 @@ public class Main {
         while (true){
             try{
                 System.out.println("updating points");
-                BufferedWriter writer = new BufferedWriter(new FileWriter(new File("pointsbot/Resources/points.txt")));
+                BufferedWriter writer = new BufferedWriter(new FileWriter(new File("../KirbyBotResources/points.txt")));
                 for (Map.Entry<Long,Map<User,Integer>> entry:servers.entrySet()){
                     long server = entry.getKey();
                     for(Map.Entry<User,Integer> subEntry:servers.get(server).entrySet())
@@ -153,6 +201,9 @@ public class Main {
                 Thread.currentThread().interrupt();
             }
         }
+    }
+    private static boolean containsString(String message,String word){
+        return Arrays.stream(message.toLowerCase().split("\\s")).filter(s->(word.toLowerCase().equalsIgnoreCase(s))).count() != 0;
     }
 
 }
