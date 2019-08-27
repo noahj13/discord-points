@@ -129,6 +129,8 @@ public class Main {
                 }
                 else{
                     event.getMessage().addReactionAddListener(m -> {
+                        User user = event.getMessageAuthor().asUser().get();
+                        User reactionUser = m.getUser();
                         if (event.getMessage().getReactions().stream().filter(i -> {
                             try {
                                 return i.getUsers().get().stream().filter(User::isYourself).collect(Collectors.toList()).size() != 0;
@@ -140,8 +142,7 @@ public class Main {
                             return false;
                         }).collect(Collectors.toList()).size() == 0) {
                             if (m.getEmoji().equalsEmoji("👍")) {
-                                User user = event.getMessageAuthor().asUser().get();
-                                if (true||!user.equals(event.getMessageAuthor().asUser().get())) {
+                                if (!user.equals(reactionUser)) {
                                     if (servers.get(server).get(user) != null)
                                         servers.get(server).put(user, servers.get(server).get(user) + 1);
                                     else
@@ -150,8 +151,7 @@ public class Main {
                                     event.getMessage().addReaction("✅");
                                 }
                             } else if (m.getEmoji().equalsEmoji("👎")) {
-                                User user = event.getMessageAuthor().asUser().get();
-                                if (true||!user.equals(event.getMessageAuthor().asUser().get())) {
+                                if (!user.equals(reactionUser)) {
                                     if (servers.get(server).get(user) != null)
                                         servers.get(server).put(user, servers.get(server).get(user) - 1);
                                     else
@@ -168,7 +168,7 @@ public class Main {
                 }
             }
             else{
-                event.getMessage().addReactionAddListener(m->{}).removeAfter(30,TimeUnit.SECONDS).addRemoveHandler(()->{
+                event.getMessage().addReactionAddListener(m->{}).removeAfter(10,TimeUnit.MINUTES).addRemoveHandler(()->{
                     int thumbsup = 0;
                     int thumbsdown = 0;
                     if(event.getMessage().getReactionByEmoji("👍").isPresent())
